@@ -60,7 +60,7 @@ To inspect actual usage: `docker stats`.
 |---|---|---|---|
 | 1 | Infra (Postgres + Neo4j + Redis + Django/Next.js skeletons) | done | All services healthy, `/health/` returns 200 |
 | 2 | Auth (`users` app + SIWE + JWT) | done | `POST /api/auth/wallet/verify/` issues JWT |
-| 3 | Domains (CRUD + status flow) | pending | Full domain lifecycle PENDING → VAULTED |
+| 3 | Domains (CRUD + status flow) | done | Full domain lifecycle PENDING → VAULTED |
 | 4 | Shards / Marketplace (campaigns + invest) | pending | Curator can buy shards |
 | 5 | Knowledge Graph (Neo4j sync + discovery) | pending | `/api/graph/discover/` returns nodes |
 | 6 | Frontend pages (App Router + wallet UX) | pending | End-to-end flow in browser |
@@ -68,4 +68,4 @@ To inspect actual usage: `docker stats`.
 | 8 | Celery + email + observability | pending | Background jobs run, Sentry receives events |
 
 See [CHANGELOG.md](./CHANGELOG.md) for per-subsystem release notes.
-Current version: **v0.2.0** (yurika.space-v2).
+Current version: **v0.3.0** (yurika.space-v2).

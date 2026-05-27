@@ -16,6 +16,7 @@ dependencies = [
     "neomodel>=5.3",
     "siwe>=4.2",
     "web3>=6.20",
+    "dnspython>=2.7",
     "python-dotenv>=1.0",
     "gunicorn>=22.0",
 ]

@@ -12,6 +12,6 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("dev/panel/", dev_panel, name="dev-panel"),
     path("api/auth/", include("apps.users.urls")),
-    # path("api/", include("apps.domains.urls")),          # subsystem 3
+    path("api/", include("apps.domains.urls")),
     # path("api/graph/", include("apps.graph.urls")),      # subsystem 5
 ]

@@ -28,9 +28,9 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_extensions",
     # Internal apps (added per subsystem)
+    "apps.core",        # subsystem 3 (shared BaseModel)
     "apps.users",       # subsystem 2
-    # "apps.core",      # subsystem 2
-    # "apps.domains",   # subsystem 3
+    "apps.domains",     # subsystem 3
     # "apps.graph",     # subsystem 5
 ]
 
