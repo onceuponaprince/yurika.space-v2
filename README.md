@@ -59,7 +59,7 @@ To inspect actual usage: `docker stats`.
 | # | Subsystem | Status | Verify gate |
 |---|---|---|---|
 | 1 | Infra (Postgres + Neo4j + Redis + Django/Next.js skeletons) | done | All services healthy, `/health/` returns 200 |
-| 2 | Auth (`users` app + SIWE + JWT) | pending | `POST /api/auth/wallet/verify/` issues JWT |
+| 2 | Auth (`users` app + SIWE + JWT) | done | `POST /api/auth/wallet/verify/` issues JWT |
 | 3 | Domains (CRUD + status flow) | pending | Full domain lifecycle PENDING → VAULTED |
 | 4 | Shards / Marketplace (campaigns + invest) | pending | Curator can buy shards |
 | 5 | Knowledge Graph (Neo4j sync + discovery) | pending | `/api/graph/discover/` returns nodes |

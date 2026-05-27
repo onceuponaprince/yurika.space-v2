@@ -28,11 +28,19 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_extensions",
     # Internal apps (added per subsystem)
-    # "apps.users",     # subsystem 2
+    "apps.users",       # subsystem 2
     # "apps.core",      # subsystem 2
     # "apps.domains",   # subsystem 3
     # "apps.graph",     # subsystem 5
 ]
+
+AUTH_USER_MODEL = "users.User"
+
+SIWE_CHAIN_ID = int(os.environ.get("SIWE_CHAIN_ID", "8453"))  # Base mainnet
+SIWE_STATEMENT = os.environ.get(
+    "SIWE_STATEMENT",
+    "Sign in to yurika.space. This proves you control the wallet; no transaction is sent.",
+)
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -111,12 +119,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        # subsystem 2 adds SimpleJWT
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+}
+
+from datetime import timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 CORS_ALLOWED_ORIGINS = [
