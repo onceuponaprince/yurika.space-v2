@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     "apps.users",       # subsystem 2
     "apps.domains",     # subsystem 3
     "apps.marketplace", # subsystem 4
-    # "apps.graph",     # subsystem 5
+    "apps.graph",       # subsystem 5
 ]
 
 AUTH_USER_MODEL = "users.User"

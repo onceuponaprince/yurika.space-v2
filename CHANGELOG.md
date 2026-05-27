@@ -14,10 +14,71 @@ subsystem's verify gate.
 
 ### Pending
 
-- Subsystem 5 — Knowledge Graph (Neo4j sync + discovery)
 - Subsystem 6 — Frontend pages (App Router + wallet UX)
 - Subsystem 7 — Smart contracts (Foundry → Base Sepolia)
 - Subsystem 8 — Celery + email + observability
+
+## [0.5.0] — 2026-05-27 — Subsystem 5: Knowledge Graph
+
+### Added
+
+- `apps.graph` — new app that mirrors Postgres entities into Neo4j
+  and exposes a discovery API. neomodel 6.1 wired against the bolt URL
+  Django already knew about (the container has been running healthy
+  since S1 with zero nodes; S5 finally writes to it).
+- Three `StructuredNode` types — `UserNode`, `DomainNode`, `ProjectNode`
+  — keyed on the Postgres UUID (`StringProperty(unique_index=True)`,
+  not `UniqueIdProperty`, so the SQL UUID is the single source of
+  truth and the Neo4j store can't diverge into its own identity space).
+- Relationships: `(User)-[:OWNS]->(Domain)`, `(User)-[:HOLDS]->(Domain)`,
+  `(Domain)-[:HAS_PROJECT]->(Project)`.
+- `apps.graph.sync` — idempotent upsert functions (`_upsert_user`,
+  `_upsert_domain`, `_upsert_project`, `_upsert_holding`). Each
+  wraps its body in a broad try/except and returns `None` on failure
+  instead of raising — Neo4j outage degrades to "graph view is stale"
+  rather than "user request 500s".
+- `apps.graph.signals` — `post_save` receivers on `User`, `Domain`,
+  `Project`, and `ShardHolding` that drive the sync. Registered in
+  `GraphConfig.ready()` so target apps are guaranteed loaded.
+- Discovery endpoint at `GET /api/graph/discover/` with three modes:
+  - `?mode=trending`     — public; ranks domains by distinct holder
+                            count. Defaults for anonymous callers.
+  - `?mode=personalized` — auth required; 1-hop peer-curator graph
+                            traversal. Defaults for authenticated
+                            callers.
+  - `?mode=stats`        — public; coarse node/edge counts. Useful
+                            for the dev panel and as a fallback.
+- Personalized discovery Cypher implements three product decisions:
+  - **Peer definition**: Jaccard-style — every user sharing ≥1
+    holding counts as a peer, weighted by overlap count.
+  - **Ranking**: sum of peer weights per candidate domain
+    (collaborative-filter score; both popularity-within-tribe and
+    single-very-aligned-peer contribute).
+  - **Exclusions**: drops domains the caller already holds, domains
+    they own as founder, and any in `withdrawn` or `completed` status.
+- 31 new pytest cases covering: sync layer (upserts, idempotency,
+  silent failure on Neo4j outage), signal-driven sync, trending and
+  stats Cypher queries, endpoint mode dispatch + default routing,
+  personalized discovery exercising each of the three design
+  decisions individually, plus the S5 verify-gate end-to-end test.
+
+### Changed
+
+- `apps.graph` added to `INSTALLED_APPS`; `/api/graph/` mounted in
+  `config/urls.py`.
+- Test isolation: graph tests use an autouse `clean_neo4j` fixture
+  (clear before + after each test) so prior runs from other apps
+  don't pollute results. Other apps' tests are unaffected — their
+  signal-driven Neo4j writes happen but don't impact assertions.
+
+### Verify gate
+
+`TestS5VerifyGate.test_holdings_flow_through_to_discovery` walks the
+full pipeline: create founder + curator + active campaign in Postgres,
+let signals mirror to Neo4j automatically, then hit
+`GET /api/graph/discover/?mode=trending` and confirm the domain comes
+back as `{fqdn: "yurika.space", score: 1}`. Live curl smoke against
+the container confirms all three modes respond as documented.
 
 ## [0.4.2] — 2026-05-27 — Guided dev panel
 
@@ -235,7 +296,8 @@ Live curl smoke against the container confirms `/api/domains/` and
 `{"status": "ok", "checks": {"postgres": "ok", "redis": "ok"}}`;
 `curl http://localhost:3001/` returns 200.
 
-[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.5.0
 [0.4.2]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.2
 [0.4.1]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.1
 [0.4.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.0
