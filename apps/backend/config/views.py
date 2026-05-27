@@ -6,8 +6,11 @@ subsystems), the check is skipped rather than failing the gate.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
+from django.conf import settings
 from django.db import connection
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
 
@@ -36,3 +39,13 @@ def health(request) -> JsonResponse:
         {"status": "ok" if status_ok else "degraded", "checks": checks},
         status=200 if status_ok else 503,
     )
+
+
+_PANEL_HTML_PATH = Path(__file__).resolve().parent / "dev_panel.html"
+
+
+@require_GET
+def dev_panel(request) -> HttpResponse:
+    if not settings.DEBUG:
+        raise Http404()
+    return HttpResponse(_PANEL_HTML_PATH.read_text(encoding="utf-8"), content_type="text/html; charset=utf-8")
