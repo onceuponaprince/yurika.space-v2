@@ -1,0 +1,65 @@
+# --- env ---
+.env
+.env.local
+.env.*.local
+
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+mediafiles/
+
+# --- uv ---
+.uv/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- pnpm ---
+.pnpm-store/
+
+# --- Foundry (subsystem 7) ---
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Docker ---
+.docker/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Test artifacts ---
+coverage/
+.coverage
+.nyc_output/
+playwright-report/
+test-results/

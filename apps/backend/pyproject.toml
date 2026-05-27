@@ -1,0 +1,42 @@
+[project]
+name = "yurika-backend"
+version = "0.1.0"
+description = "Yurika.space Django backend — rebuild"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.0,<5.2",
+    "djangorestframework>=3.15",
+    "djangorestframework-simplejwt[crypto]>=5.3",
+    "django-cors-headers>=4.4",
+    "django-extensions>=3.2",
+    "dj-database-url>=2.2",
+    "psycopg[binary]>=3.2",
+    "redis>=5.0",
+    "celery>=5.4",
+    "neomodel>=5.3",
+    "siwe>=4.2",
+    "web3>=6.20",
+    "python-dotenv>=1.0",
+    "gunicorn>=22.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.9",
+    "factory-boy>=3.3",
+    "ruff>=0.7",
+    "ipython>=8.27",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.local"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
