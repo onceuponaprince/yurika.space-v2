@@ -21,6 +21,21 @@ subsystem's verify gate.
 - Subsystem 7 — Smart contracts (Foundry → Base Sepolia)
 - Subsystem 8 — Celery + email + observability
 
+## [0.2.1] — 2026-05-27 — Dev tools
+
+### Added
+
+- `GET /api/auth/whoami/` — JWT-protected endpoint returning the
+  authenticated user's `id` and `wallet_address`. Pairs with the dev
+  panel for round-trip verification of issued tokens.
+- `GET /dev/panel/` (DEBUG-only) — single-page HTML+JS panel for
+  walking the SIWE flow end-to-end without MetaMask. Generates an
+  ephemeral keypair in-browser via ethers.js, mints a nonce, signs,
+  verifies, and lets you fire arbitrary authenticated requests with
+  the resulting Bearer token. 404s when DEBUG=False.
+- 4 tests for `/whoami/` covering happy path, missing-auth 401,
+  malformed-bearer 401, and multi-user discrimination.
+
 ## [0.2.0] — 2026-05-27 — Subsystem 2: SIWE + JWT auth
 
 ### Added
@@ -83,6 +98,7 @@ subsystem's verify gate.
 `{"status": "ok", "checks": {"postgres": "ok", "redis": "ok"}}`;
 `curl http://localhost:3001/` returns 200.
 
-[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.2.1
 [0.2.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.2.0
 [0.1.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.1.0
