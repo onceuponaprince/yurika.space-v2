@@ -13,5 +13,6 @@ urlpatterns = [
     path("dev/panel/", dev_panel, name="dev-panel"),
     path("api/auth/", include("apps.users.urls")),
     path("api/", include("apps.domains.urls")),
+    path("api/", include("apps.marketplace.urls")),
     # path("api/graph/", include("apps.graph.urls")),      # subsystem 5
 ]

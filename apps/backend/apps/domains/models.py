@@ -103,9 +103,9 @@ class Domain(BaseModel):
 class Project(BaseModel):
     """Founder's project — pitch deck, repo, narrative.
 
-    Created by founders before a campaign launches. The FK to a
-    ShardCampaign comes in subsystem 4; for now, Projects exist as
-    standalone founder-side artifacts.
+    Optionally linked to a ShardCampaign once one is created (S4). The
+    OneToOne is nullable so Projects can exist before a campaign is
+    set up; one Project per campaign at most.
     """
 
     owner = models.ForeignKey(
@@ -118,6 +118,13 @@ class Project(BaseModel):
     pitch_deck_url = models.URLField(blank=True)
     repository_url = models.URLField(blank=True)
     media_url = models.URLField(blank=True)
+    campaign = models.OneToOneField(
+        "marketplace.ShardCampaign",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="project",
+    )
 
     class Meta:
         db_table = "projects"

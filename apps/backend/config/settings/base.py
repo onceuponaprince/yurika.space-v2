@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.core",        # subsystem 3 (shared BaseModel)
     "apps.users",       # subsystem 2
     "apps.domains",     # subsystem 3
+    "apps.marketplace", # subsystem 4
     # "apps.graph",     # subsystem 5
 ]
 

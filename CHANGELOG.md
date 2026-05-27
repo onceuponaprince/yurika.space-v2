@@ -14,11 +14,63 @@ subsystem's verify gate.
 
 ### Pending
 
-- Subsystem 4 — Shards / Marketplace
 - Subsystem 5 — Knowledge Graph (Neo4j sync + discovery)
 - Subsystem 6 — Frontend pages (App Router + wallet UX)
 - Subsystem 7 — Smart contracts (Foundry → Base Sepolia)
 - Subsystem 8 — Celery + email + observability
+
+## [0.4.0] — 2026-05-27 — Subsystem 4: Shards / Marketplace
+
+### Added
+
+- `apps.marketplace` — new app introducing `ShardCampaign` (one per
+  Domain, OneToOne) and `ShardHolding` (per `(campaign, holder)`
+  pair, unique-together).
+- `ShardCampaign` integrates with Domain's existing 7-state lifecycle.
+  Creating a campaign transitions the parent Domain `VAULTED →
+  SHARDING`; calling `/activate/` moves `SHARDING → ACTIVE`; hitting
+  `funding_target_usd` during a purchase auto-transitions
+  `ACTIVE → COMPLETED`.
+- `ShardCampaign.funding_percentage` and `.total_cap_usd` derived
+  properties. `clean()` enforces `total_shards > 0`, `price > 0`,
+  `funding_target ≤ total_shards * price`, `shards_available ≤
+  total_shards`, and `ends_at > starts_at` when both set.
+- `Project.campaign` OneToOne to `ShardCampaign` — completes the
+  founder-side coupling deferred in S3.
+- Endpoints:
+  - `GET  /api/campaigns/`               public marketplace listing
+                                          (filterable by `?status=`)
+  - `POST /api/campaigns/`               founder creates a campaign for
+                                          their VAULTED domain
+  - `GET  /api/campaigns/<id>/`          public detail
+  - `PATCH /api/campaigns/<id>/`         owner edit; only while in
+                                          SHARDING (pre-activation)
+  - `POST /api/campaigns/<id>/activate/` owner moves SHARDING → ACTIVE
+  - `POST /api/campaigns/<id>/buy/`      curator purchases shards;
+                                          atomic via `select_for_update`
+  - `GET  /api/holdings/`                authenticated user's own
+                                          holdings across all campaigns
+- Atomic purchase flow: campaign row locked for the transaction;
+  `shards_available` decremented, `funding_raised_usd` incremented,
+  `ShardHolding` upserted via `get_or_create` then incremented on
+  repeat buys. Each purchase records a mock 32-byte `tx_hash` (real
+  on-chain tx hashes land in S7).
+- 28 new pytest cases: model defaults + validators + unique
+  constraints, campaign creation gated on Domain state + ownership,
+  marketplace list is public, activation is owner-only, full buy flow
+  (happy path, oversold rejection, wrong-state rejection, repeat-buy
+  upsert, two-curator isolation, auto-COMPLETED when target hit,
+  unauthenticated rejection), holdings list isolation, plus the S4
+  verify-gate end-to-end test walking a founder + curator through
+  the whole pipeline.
+
+### Verify gate
+
+`TestS4VerifyGate.test_curator_can_buy_shards_end_to_end` exercises:
+founder vaults domain → founder creates campaign (SHARDING) →
+founder activates (ACTIVE) → curator buys 250 shards →
+`funding_raised_usd = $2500` and the curator's `/holdings/` reflects
+the purchase. Whole flow through DRF's `APIClient` over real HTTP.
 
 ## [0.3.0] — 2026-05-27 — Subsystem 3: Domains + DNS verify + vaulting
 
@@ -150,7 +202,8 @@ Live curl smoke against the container confirms `/api/domains/` and
 `{"status": "ok", "checks": {"postgres": "ok", "redis": "ok"}}`;
 `curl http://localhost:3001/` returns 200.
 
-[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.0
 [0.3.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.3.0
 [0.2.1]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.2.1
 [0.2.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.2.0
