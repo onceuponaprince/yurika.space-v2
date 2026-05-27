@@ -19,6 +19,18 @@ subsystem's verify gate.
 - Subsystem 7 — Smart contracts (Foundry → Base Sepolia)
 - Subsystem 8 — Celery + email + observability
 
+## [0.4.1] — 2026-05-27 — Dev panel slash-normalization fix
+
+### Fixed
+
+- Dev panel's "authenticated request" section now auto-appends a
+  trailing slash to relative URLs that lack one. Django's
+  `APPEND_SLASH=True` (default) redirects GET via 301 but raises
+  `RuntimeError` on POST/PUT/DELETE because the request body can't
+  survive a redirect, surfacing as a 500. Client-side normalization
+  is cheaper than disabling `APPEND_SLASH` server-wide and less
+  surprising than the 500. Absolute URLs (http://...) are left alone.
+
 ## [0.4.0] — 2026-05-27 — Subsystem 4: Shards / Marketplace
 
 ### Added
@@ -202,7 +214,8 @@ Live curl smoke against the container confirms `/api/domains/` and
 `{"status": "ok", "checks": {"postgres": "ok", "redis": "ok"}}`;
 `curl http://localhost:3001/` returns 200.
 
-[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.1
 [0.4.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.0
 [0.3.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.3.0
 [0.2.1]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.2.1

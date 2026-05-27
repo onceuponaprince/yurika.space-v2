@@ -224,9 +224,21 @@ $("btn-verify").onclick = async () => {
   }
 };
 
+// Django's APPEND_SLASH=True redirects GET to add a trailing slash via 301,
+// but POST/PUT/DELETE can't be redirected (body would be lost) — Django
+// raises RuntimeError and returns 500. Normalize relative paths client-side
+// so users can be sloppy with trailing slashes without hitting a 500.
+function normalizeUrl(raw) {
+  if (!raw) return raw;
+  if (/^https?:\/\//.test(raw)) return raw;  // absolute — leave alone
+  const [path, query = ""] = raw.split("?");
+  const withSlash = path.endsWith("/") ? path : path + "/";
+  return query ? `${withSlash}?${query}` : withSlash;
+}
+
 $("btn-auth-send").onclick = async () => {
   setPill($("auth-pill"), "…", null);
-  const url = $("auth-url").value.trim();
+  const url = normalizeUrl($("auth-url").value.trim());
   const method = ($("auth-method").value.trim() || "GET").toUpperCase();
   const bodyTxt = $("auth-body").value.trim();
   const headers = {};
