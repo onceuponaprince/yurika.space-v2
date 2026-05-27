@@ -19,6 +19,27 @@ subsystem's verify gate.
 - Subsystem 7 — Smart contracts (Foundry → Base Sepolia)
 - Subsystem 8 — Celery + email + observability
 
+## [0.4.2] — 2026-05-27 — Guided dev panel
+
+### Added
+
+- Dev panel rewritten as a top-to-bottom guided flow with state
+  carried across sections: ① health → ② one-click SIWE auth →
+  ③ submit domain → ④ create + activate campaign → ⑤ buy shards →
+  ⑥ list holdings → ⑦ advanced (custom request). Each section
+  enables the next only when its prerequisite is met; a sticky
+  state bar at the top shows wallet, JWT status, current domain,
+  and campaign funding %.
+- `POST /api/domains/<id>/dev-force-vault/` — DEBUG-only shortcut
+  that skips DNS verification and jumps a domain straight to
+  VAULTED with mock contract addresses. 404s when `DEBUG=False`.
+  Exists so the panel can exercise S3 → S4 → onward without
+  publishing real DNS TXT records.
+- 3 new pytest cases for the force-vault endpoint, including a
+  test that confirms it 404s when DEBUG is disabled (the only
+  thing standing between this shortcut and a production attack
+  surface).
+
 ## [0.4.1] — 2026-05-27 — Dev panel slash-normalization fix
 
 ### Fixed
@@ -214,7 +235,8 @@ Live curl smoke against the container confirms `/api/domains/` and
 `{"status": "ok", "checks": {"postgres": "ok", "redis": "ok"}}`;
 `curl http://localhost:3001/` returns 200.
 
-[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.2
 [0.4.1]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.1
 [0.4.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.0
 [0.3.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.3.0

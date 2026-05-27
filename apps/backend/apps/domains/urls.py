@@ -7,6 +7,7 @@ from apps.domains.views import (
     DomainListCreate,
     ProjectDetail,
     ProjectListCreate,
+    dev_force_vault,
     vault_domain,
     verify_domain,
     verify_instructions,
@@ -18,6 +19,7 @@ urlpatterns = [
     path("domains/<uuid:pk>/verify-instructions/", verify_instructions, name="domain-verify-instructions"),
     path("domains/<uuid:pk>/verify/", verify_domain, name="domain-verify"),
     path("domains/<uuid:pk>/vault/", vault_domain, name="domain-vault"),
+    path("domains/<uuid:pk>/dev-force-vault/", dev_force_vault, name="domain-dev-force-vault"),
     path("projects/", ProjectListCreate.as_view(), name="project-list"),
     path("projects/<uuid:pk>/", ProjectDetail.as_view(), name="project-detail"),
 ]

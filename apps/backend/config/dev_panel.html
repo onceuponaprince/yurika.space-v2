@@ -5,258 +5,485 @@
 <title>yurika.space — dev panel</title>
 <style>
   :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
   body {
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-    max-width: 920px;
-    margin: 2em auto;
+    max-width: 960px;
+    margin: 1.5em auto;
     padding: 0 1.25em;
     line-height: 1.5;
   }
   h1 { font-size: 1.4em; margin-bottom: 0.2em; }
   h2 {
-    font-size: 1em;
-    margin-top: 2em;
-    padding-top: 0.8em;
-    border-top: 1px solid #ccc4;
-    color: #666;
+    font-size: 0.85em;
+    margin: 1.6em 0 0.4em 0;
+    padding: 0.4em 0.6em;
+    background: #f4f4f4;
+    border-left: 3px solid #888;
+    color: #444;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    font-weight: 600;
   }
-  p.lede { color: #666; margin-top: 0; }
+  h2.done { border-left-color: #0a5; }
+  h2.locked { opacity: 0.45; }
+  @media (prefers-color-scheme: dark) {
+    h2 { background: #1c1c1c; color: #ccc; border-left-color: #555; }
+    h2.done { border-left-color: #4d8; }
+  }
+  p.lede { color: #666; margin-top: 0; font-size: 0.92em; }
   code, pre, input, textarea { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   pre {
     background: #f6f6f6;
     color: #111;
-    padding: 0.8em 1em;
+    padding: 0.7em 0.9em;
     overflow-x: auto;
     border-radius: 6px;
-    font-size: 0.82em;
-    min-height: 1.5em;
+    font-size: 0.78em;
+    margin: 0.4em 0;
     white-space: pre-wrap;
     word-break: break-all;
+    max-height: 18em;
+    overflow-y: auto;
   }
   @media (prefers-color-scheme: dark) {
     pre { background: #1a1a1a; color: #eee; }
   }
-  input[type=text], textarea {
+  input[type=text], input[type=number], textarea {
     width: 100%;
-    padding: 0.55em 0.7em;
-    box-sizing: border-box;
+    padding: 0.5em 0.65em;
     font-size: 0.88em;
     border: 1px solid #ccc8;
     border-radius: 6px;
     background: transparent;
     color: inherit;
   }
-  textarea { min-height: 4em; resize: vertical; }
+  textarea { min-height: 3.5em; resize: vertical; }
+  .input-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 0.4em 0.7em;
+    align-items: center;
+    margin: 0.5em 0;
+  }
+  .input-grid label {
+    font-size: 0.82em;
+    color: #888;
+    text-align: right;
+  }
   button {
-    padding: 0.55em 1em;
+    padding: 0.5em 0.95em;
     cursor: pointer;
     background: #111;
     color: white;
     border: 0;
     border-radius: 6px;
-    font-size: 0.88em;
-    margin-right: 0.5em;
+    font-size: 0.86em;
+    margin-right: 0.4em;
     font-weight: 500;
   }
-  button:hover { background: #333; }
-  button:disabled { background: #999; cursor: not-allowed; }
-  .row { display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin: 0.6em 0; }
-  .out { margin-top: 0.5em; }
-  label { display: block; margin-top: 0.6em; font-size: 0.8em; color: #888; }
-  .pill { font-size: 0.75em; padding: 0.15em 0.5em; border-radius: 999px; background: #eee; color: #555; font-family: ui-monospace, monospace; }
+  button:hover:not(:disabled) { background: #333; }
+  button:disabled { background: #bbb; cursor: not-allowed; opacity: 0.6; }
+  button.secondary { background: #555; }
+  button.danger { background: #a33; }
+  .row { display: flex; gap: 0.4em; align-items: center; flex-wrap: wrap; margin: 0.45em 0; }
+  .pill {
+    font-size: 0.72em;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    background: #eee;
+    color: #555;
+    font-family: ui-monospace, monospace;
+  }
   .pill.ok { background: #d4f5d6; color: #0a5; }
   .pill.err { background: #fde2e2; color: #a00; }
-  .addr {
-    font-family: ui-monospace, monospace;
+  .pill.warn { background: #fff3cd; color: #875; }
+  @media (prefers-color-scheme: dark) {
+    .pill { background: #2a2a2a; color: #ccc; }
+  }
+  .state-bar {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    padding: 0.6em 0;
+    border-bottom: 1px solid #ddd;
+    z-index: 10;
     font-size: 0.82em;
-    color: #444;
-    word-break: break-all;
+    color: #555;
+    display: flex;
+    gap: 0.6em;
+    flex-wrap: wrap;
   }
   @media (prefers-color-scheme: dark) {
-    .addr { color: #ccc; }
-    .pill { background: #2a2a2a; color: #ccc; }
-    h2 { color: #aaa; }
-    p.lede { color: #aaa; }
+    .state-bar { background: #0f0f0f; border-bottom-color: #333; color: #aaa; }
+  }
+  .state-bar .pill { font-size: 0.75em; }
+  .hint {
+    font-size: 0.78em;
+    color: #888;
+    margin: 0.4em 0;
+  }
+  details.advanced summary {
+    cursor: pointer;
+    font-size: 0.85em;
+    color: #888;
+    padding: 0.4em 0;
+  }
+  details.advanced[open] summary { color: #444; }
+  @media (prefers-color-scheme: dark) {
+    details.advanced[open] summary { color: #ccc; }
   }
 </style>
 </head>
 <body>
+
 <h1>yurika.space — dev panel</h1>
 <p class="lede">
-  Test the SIWE auth flow + any authenticated endpoint. Uses an ephemeral
-  keypair generated in your browser — no wallet extension required.
+  Walk the full founder-and-curator flow end-to-end. Generates an
+  ephemeral keypair in your browser via ethers.js — no MetaMask, no
+  real DNS, no real on-chain transactions. Useful for verifying every
+  step works as the backend is built up.
 </p>
 
-<h2>1 · health check</h2>
+<div class="state-bar">
+  <span class="pill" id="state-wallet">no wallet</span>
+  <span class="pill" id="state-jwt">no JWT</span>
+  <span class="pill" id="state-domain">no domain</span>
+  <span class="pill" id="state-campaign">no campaign</span>
+</div>
+
+<h2 id="h-health">① health</h2>
 <div class="row">
   <button id="btn-health">GET /health/</button>
   <span class="pill" id="health-pill">—</span>
 </div>
-<pre class="out" id="health-out">—</pre>
+<pre id="health-out">—</pre>
 
-<h2>2 · wallet (ephemeral)</h2>
+<h2 id="h-auth">② sign in (one-click SIWE)</h2>
+<p class="hint">
+  Generates a fresh keypair, mints a nonce, signs the SIWE message,
+  and posts to /verify/ — all in one click. Captures the JWT for
+  subsequent steps.
+</p>
 <div class="row">
-  <button id="btn-newkey">Generate fresh keypair</button>
-  <span class="addr" id="addr-display">no key yet</span>
-</div>
-
-<h2>3 · mint nonce</h2>
-<div class="row">
-  <button id="btn-nonce">GET /api/auth/wallet/nonce/</button>
-  <span class="pill" id="nonce-pill">—</span>
-</div>
-<label>SIWE message the wallet will sign:</label>
-<pre class="out" id="nonce-out">—</pre>
-
-<h2>4 · sign + verify</h2>
-<div class="row">
-  <button id="btn-verify">POST /api/auth/wallet/verify/</button>
-  <span class="pill" id="verify-pill">—</span>
-</div>
-<label>Response:</label>
-<pre class="out" id="verify-out">—</pre>
-
-<h2>5 · authenticated request</h2>
-<label>URL (path or absolute):</label>
-<input type="text" id="auth-url" value="/api/auth/whoami/" placeholder="/api/...">
-<label>Method:</label>
-<input type="text" id="auth-method" value="GET">
-<label>Body (JSON, blank for GET/DELETE):</label>
-<textarea id="auth-body" placeholder='{"key": "value"}'></textarea>
-<div class="row" style="margin-top: 0.8em">
-  <button id="btn-auth-send">Send with Bearer JWT</button>
+  <button id="btn-auth">Sign in with new wallet</button>
   <span class="pill" id="auth-pill">—</span>
-  <span class="pill" id="jwt-status">no JWT yet</span>
 </div>
-<label>Response:</label>
-<pre class="out" id="auth-out">—</pre>
+<pre id="auth-out">—</pre>
+
+<h2 id="h-domain" class="locked">③ submit a domain</h2>
+<p class="hint">
+  Creates a Domain in <code>pending</code> status. Use the dev
+  shortcut to skip DNS verification and jump straight to
+  <code>vaulted</code> — saves you publishing a real TXT record
+  to exercise the rest of the flow.
+</p>
+<div class="input-grid">
+  <label for="dom-name">name</label>
+  <input type="text" id="dom-name" value="yurika">
+  <label for="dom-tld">tld</label>
+  <input type="text" id="dom-tld" value="space">
+</div>
+<div class="row">
+  <button id="btn-create-domain" disabled>POST /api/domains/</button>
+  <button id="btn-force-vault" class="secondary" disabled>Force-vault (skip DNS)</button>
+  <span class="pill" id="domain-pill">—</span>
+</div>
+<pre id="domain-out">—</pre>
+
+<h2 id="h-campaign" class="locked">④ create a campaign</h2>
+<p class="hint">
+  Once the domain is <code>vaulted</code>, attach a ShardCampaign.
+  Creating it transitions the domain to <code>sharding</code>;
+  activating it transitions to <code>active</code> and opens it
+  for purchases.
+</p>
+<div class="input-grid">
+  <label for="camp-title">title</label>
+  <input type="text" id="camp-title" value="Test Campaign">
+  <label for="camp-thesis">thesis</label>
+  <input type="text" id="camp-thesis" value="Testing the marketplace flow">
+  <label for="camp-shards">total_shards</label>
+  <input type="number" id="camp-shards" value="1000" min="1">
+  <label for="camp-price">price per shard (USD)</label>
+  <input type="number" id="camp-price" value="5" min="0" step="0.01">
+  <label for="camp-target">funding target (USD)</label>
+  <input type="number" id="camp-target" value="2500" min="0" step="0.01">
+</div>
+<div class="row">
+  <button id="btn-create-campaign" disabled>POST /api/campaigns/</button>
+  <button id="btn-activate" class="secondary" disabled>Activate (sharding → active)</button>
+  <span class="pill" id="campaign-pill">—</span>
+</div>
+<pre id="campaign-out">—</pre>
+
+<h2 id="h-buy" class="locked">⑤ buy shards (as curator)</h2>
+<p class="hint">
+  Buys shards as the same authenticated wallet. Production-wise a
+  curator would be a different wallet from the founder, but the
+  schema doesn't prevent founders from buying their own
+  campaign — see the v0.4.0 commit notes.
+</p>
+<div class="input-grid">
+  <label for="buy-shards">shards to buy</label>
+  <input type="number" id="buy-shards" value="100" min="1">
+</div>
+<div class="row">
+  <button id="btn-buy" disabled>POST /api/campaigns/&lt;id&gt;/buy/</button>
+  <span class="pill" id="buy-pill">—</span>
+</div>
+<pre id="buy-out">—</pre>
+
+<h2 id="h-holdings" class="locked">⑥ list my holdings</h2>
+<div class="row">
+  <button id="btn-holdings" disabled>GET /api/holdings/</button>
+  <span class="pill" id="holdings-pill">—</span>
+</div>
+<pre id="holdings-out">—</pre>
+
+<details class="advanced">
+<summary>⑦ custom request (advanced)</summary>
+<p class="hint">
+  Any URL, any method, attaches the current JWT. Useful for poking
+  at endpoints not yet wrapped in a button (e.g. /api/projects/,
+  /api/auth/whoami/).
+</p>
+<div class="input-grid">
+  <label for="adv-url">url</label>
+  <input type="text" id="adv-url" value="/api/auth/whoami/">
+  <label for="adv-method">method</label>
+  <input type="text" id="adv-method" value="GET">
+  <label for="adv-body">body (JSON)</label>
+  <textarea id="adv-body" placeholder='{"key": "value"}'></textarea>
+</div>
+<div class="row">
+  <button id="btn-adv-send">Send</button>
+  <span class="pill" id="adv-pill">—</span>
+</div>
+<pre id="adv-out">—</pre>
+</details>
 
 <script type="module">
-import { Wallet, hashMessage } from "https://esm.sh/ethers@6.13.4";
+import { Wallet } from "https://esm.sh/ethers@6.13.4";
 
 const $ = (id) => document.getElementById(id);
 const setPill = (el, txt, cls) => {
   el.textContent = txt;
   el.className = "pill" + (cls ? " " + cls : "");
 };
+const sectionDone = (id) => $(id).classList.remove("locked");
+const sectionMark = (id, ok) => { $(id).classList.toggle("done", !!ok); $(id).classList.remove("locked"); };
+const pretty = (obj) => JSON.stringify(obj, null, 2);
 
 const state = {
   wallet: null,
-  message: null,
-  nonce: null,
-  jwt: { access: null, refresh: null },
+  jwt: null,
+  domain: null,    // {id, name, tld, status}
+  campaign: null,  // {id, status, funding_raised, total_shards, shards_available}
 };
 
-const pretty = (obj) => JSON.stringify(obj, null, 2);
-
-async function fetchJSON(url, opts = {}) {
-  const res = await fetch(url, opts);
-  const text = await res.text();
-  let body;
-  try { body = JSON.parse(text); } catch { body = text; }
-  return { status: res.status, ok: res.ok, body };
-}
-
-$("btn-health").onclick = async () => {
-  setPill($("health-pill"), "…", null);
-  try {
-    const r = await fetchJSON("/health/");
-    $("health-out").textContent = pretty(r.body);
-    setPill($("health-pill"), r.status, r.ok ? "ok" : "err");
-  } catch (e) {
-    $("health-out").textContent = String(e);
-    setPill($("health-pill"), "fetch error", "err");
-  }
-};
-
-$("btn-newkey").onclick = () => {
-  state.wallet = Wallet.createRandom();
-  $("addr-display").textContent = state.wallet.address;
-  state.message = null;
-  state.nonce = null;
-  $("nonce-out").textContent = "—";
-  $("verify-out").textContent = "—";
-  setPill($("nonce-pill"), "—", null);
-  setPill($("verify-pill"), "—", null);
-  state.jwt = { access: null, refresh: null };
-  setPill($("jwt-status"), "no JWT yet", null);
-};
-
-$("btn-nonce").onclick = async () => {
-  if (!state.wallet) {
-    $("nonce-out").textContent = "Generate a keypair first (step 2).";
-    return;
-  }
-  setPill($("nonce-pill"), "…", null);
-  const url = `/api/auth/wallet/nonce/?address=${state.wallet.address.toLowerCase()}`;
-  const r = await fetchJSON(url);
-  if (r.ok) {
-    state.message = r.body.message;
-    state.nonce = r.body.nonce;
-    $("nonce-out").textContent = r.body.message;
-    setPill($("nonce-pill"), r.status, "ok");
-  } else {
-    $("nonce-out").textContent = pretty(r.body);
-    setPill($("nonce-pill"), r.status, "err");
-  }
-};
-
-$("btn-verify").onclick = async () => {
-  if (!state.wallet || !state.message) {
-    $("verify-out").textContent = "Need a keypair (step 2) and a nonce (step 3) first.";
-    return;
-  }
-  setPill($("verify-pill"), "…", null);
-  const signature = await state.wallet.signMessage(state.message);
-  const r = await fetchJSON("/api/auth/wallet/verify/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: state.message, signature }),
-  });
-  $("verify-out").textContent = pretty(r.body);
-  setPill($("verify-pill"), r.status, r.ok ? "ok" : "err");
-  if (r.ok && r.body.access) {
-    state.jwt.access = r.body.access;
-    state.jwt.refresh = r.body.refresh;
-    setPill($("jwt-status"), `JWT for ${r.body.wallet_address.slice(0,10)}…`, "ok");
-  }
-};
-
-// Django's APPEND_SLASH=True redirects GET to add a trailing slash via 301,
-// but POST/PUT/DELETE can't be redirected (body would be lost) — Django
-// raises RuntimeError and returns 500. Normalize relative paths client-side
-// so users can be sloppy with trailing slashes without hitting a 500.
 function normalizeUrl(raw) {
   if (!raw) return raw;
-  if (/^https?:\/\//.test(raw)) return raw;  // absolute — leave alone
+  if (/^https?:\/\//.test(raw)) return raw;
   const [path, query = ""] = raw.split("?");
   const withSlash = path.endsWith("/") ? path : path + "/";
   return query ? `${withSlash}?${query}` : withSlash;
 }
 
-$("btn-auth-send").onclick = async () => {
-  setPill($("auth-pill"), "…", null);
-  const url = normalizeUrl($("auth-url").value.trim());
-  const method = ($("auth-method").value.trim() || "GET").toUpperCase();
-  const bodyTxt = $("auth-body").value.trim();
-  const headers = {};
-  if (state.jwt.access) headers["Authorization"] = `Bearer ${state.jwt.access}`;
+async function api(method, url, body) {
+  const headers = { "Content-Type": "application/json" };
+  if (state.jwt) headers["Authorization"] = `Bearer ${state.jwt}`;
   const opts = { method, headers };
-  if (bodyTxt && method !== "GET" && method !== "DELETE") {
-    headers["Content-Type"] = "application/json";
-    opts.body = bodyTxt;
-  }
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const res = await fetch(normalizeUrl(url), opts);
+  const text = await res.text();
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { parsed = text; }
+  return { status: res.status, ok: res.ok, body: parsed };
+}
+
+function refresh() {
+  // state bar
+  setPill($("state-wallet"), state.wallet ? state.wallet.address.slice(0, 10) + "…" : "no wallet",
+    state.wallet ? "ok" : null);
+  setPill($("state-jwt"), state.jwt ? "JWT ✓" : "no JWT", state.jwt ? "ok" : null);
+  setPill($("state-domain"),
+    state.domain ? `${state.domain.name}.${state.domain.tld} (${state.domain.status})` : "no domain",
+    state.domain ? (state.domain.status === "vaulted" || state.domain.status === "sharding" || state.domain.status === "active" || state.domain.status === "completed" ? "ok" : "warn") : null);
+  setPill($("state-campaign"),
+    state.campaign ? `${state.campaign.funding_percentage?.toFixed?.(1) ?? 0}% funded` : "no campaign",
+    state.campaign ? "ok" : null);
+
+  // button enablement
+  $("btn-create-domain").disabled = !state.jwt;
+  $("btn-force-vault").disabled = !state.domain;
+  $("btn-create-campaign").disabled = !(state.domain && state.domain.status === "vaulted");
+  $("btn-activate").disabled = !(state.campaign && state.domain?.status === "sharding");
+  $("btn-buy").disabled = !(state.campaign && state.domain?.status === "active");
+  $("btn-holdings").disabled = !state.jwt;
+
+  // section locks
+  if (state.jwt) sectionDone("h-domain");
+  if (state.domain) sectionDone("h-campaign");
+  if (state.campaign && state.domain?.status === "active") sectionDone("h-buy");
+  if (state.jwt) sectionDone("h-holdings");
+}
+
+// 1. HEALTH
+$("btn-health").onclick = async () => {
+  setPill($("health-pill"), "…");
+  const r = await api("GET", "/health/");
+  $("health-out").textContent = pretty(r.body);
+  setPill($("health-pill"), r.status, r.ok ? "ok" : "err");
+};
+
+// 2. AUTH (one click)
+$("btn-auth").onclick = async () => {
+  setPill($("auth-pill"), "…");
   try {
-    const r = await fetchJSON(url, opts);
-    $("auth-out").textContent = pretty(r.body);
-    setPill($("auth-pill"), r.status, r.ok ? "ok" : "err");
+    const wallet = Wallet.createRandom();
+    state.wallet = wallet;
+    refresh();
+
+    const nonceResp = await api("GET", `/api/auth/wallet/nonce/?address=${wallet.address.toLowerCase()}`);
+    if (!nonceResp.ok) throw new Error(`nonce: ${JSON.stringify(nonceResp.body)}`);
+    const message = nonceResp.body.message;
+
+    const signature = await wallet.signMessage(message);
+
+    const verifyResp = await api("POST", "/api/auth/wallet/verify/", { message, signature });
+    if (!verifyResp.ok) throw new Error(`verify: ${JSON.stringify(verifyResp.body)}`);
+
+    state.jwt = verifyResp.body.access;
+    $("auth-out").textContent = pretty({
+      address: wallet.address,
+      access_token: verifyResp.body.access.slice(0, 60) + "…",
+      refresh_token: verifyResp.body.refresh.slice(0, 60) + "…",
+    });
+    setPill($("auth-pill"), "signed in", "ok");
+    sectionMark("h-auth", true);
+    refresh();
   } catch (e) {
     $("auth-out").textContent = String(e);
-    setPill($("auth-pill"), "fetch error", "err");
+    setPill($("auth-pill"), "failed", "err");
   }
 };
+
+// 3. DOMAIN
+$("btn-create-domain").onclick = async () => {
+  setPill($("domain-pill"), "…");
+  const name = $("dom-name").value.trim();
+  const tld = $("dom-tld").value.trim();
+  const r = await api("POST", "/api/domains/", { name, tld });
+  $("domain-out").textContent = pretty(r.body);
+  if (r.ok) {
+    state.domain = { id: r.body.id, name: r.body.name, tld: r.body.tld, status: r.body.status };
+    setPill($("domain-pill"), `created (${r.body.status})`, "ok");
+    sectionMark("h-domain", true);
+  } else {
+    setPill($("domain-pill"), r.status, "err");
+  }
+  refresh();
+};
+
+$("btn-force-vault").onclick = async () => {
+  setPill($("domain-pill"), "…");
+  const r = await api("POST", `/api/domains/${state.domain.id}/dev-force-vault/`);
+  $("domain-out").textContent = pretty(r.body);
+  if (r.ok) {
+    state.domain.status = r.body.status;
+    setPill($("domain-pill"), `vaulted ✓`, "ok");
+  } else {
+    setPill($("domain-pill"), r.status, "err");
+  }
+  refresh();
+};
+
+// 4. CAMPAIGN
+$("btn-create-campaign").onclick = async () => {
+  setPill($("campaign-pill"), "…");
+  const body = {
+    domain: state.domain.id,
+    title: $("camp-title").value.trim(),
+    thesis: $("camp-thesis").value.trim(),
+    total_shards: parseInt($("camp-shards").value, 10),
+    price_per_shard_usd: $("camp-price").value,
+    funding_target_usd: $("camp-target").value,
+  };
+  const r = await api("POST", "/api/campaigns/", body);
+  $("campaign-out").textContent = pretty(r.body);
+  if (r.ok) {
+    state.campaign = {
+      id: r.body.id,
+      total_shards: r.body.total_shards,
+      shards_available: r.body.shards_available,
+      funding_raised_usd: r.body.funding_raised_usd,
+      funding_percentage: r.body.funding_percentage,
+    };
+    state.domain.status = r.body.domain_status;  // SHARDING now
+    setPill($("campaign-pill"), `created (${r.body.domain_status})`, "ok");
+    sectionMark("h-campaign", true);
+  } else {
+    setPill($("campaign-pill"), r.status, "err");
+  }
+  refresh();
+};
+
+$("btn-activate").onclick = async () => {
+  setPill($("campaign-pill"), "…");
+  const r = await api("POST", `/api/campaigns/${state.campaign.id}/activate/`);
+  $("campaign-out").textContent = pretty(r.body);
+  if (r.ok) {
+    state.domain.status = r.body.domain_status;  // ACTIVE
+    setPill($("campaign-pill"), `active ✓`, "ok");
+  } else {
+    setPill($("campaign-pill"), r.status, "err");
+  }
+  refresh();
+};
+
+// 5. BUY
+$("btn-buy").onclick = async () => {
+  setPill($("buy-pill"), "…");
+  const shards = parseInt($("buy-shards").value, 10);
+  const r = await api("POST", `/api/campaigns/${state.campaign.id}/buy/`, { shards });
+  $("buy-out").textContent = pretty(r.body);
+  if (r.ok) {
+    state.campaign.shards_available = r.body.campaign.shards_available;
+    state.campaign.funding_raised_usd = r.body.campaign.funding_raised_usd;
+    state.campaign.funding_percentage = r.body.campaign.funding_percentage;
+    state.domain.status = r.body.campaign.domain_status;  // may now be COMPLETED
+    setPill($("buy-pill"),
+      r.body.campaign.domain_status === "completed" ? "fully funded ✓" : "bought ✓",
+      "ok");
+    sectionMark("h-buy", true);
+  } else {
+    setPill($("buy-pill"), r.status, "err");
+  }
+  refresh();
+};
+
+// 6. HOLDINGS
+$("btn-holdings").onclick = async () => {
+  setPill($("holdings-pill"), "…");
+  const r = await api("GET", "/api/holdings/");
+  $("holdings-out").textContent = pretty(r.body);
+  setPill($("holdings-pill"), r.status, r.ok ? "ok" : "err");
+};
+
+// 7. ADVANCED
+$("btn-adv-send").onclick = async () => {
+  setPill($("adv-pill"), "…");
+  const url = $("adv-url").value.trim();
+  const method = ($("adv-method").value.trim() || "GET").toUpperCase();
+  const bodyTxt = $("adv-body").value.trim();
+  const body = bodyTxt && method !== "GET" && method !== "DELETE" ? JSON.parse(bodyTxt) : undefined;
+  const r = await api(method, url, body);
+  $("adv-out").textContent = pretty(r.body);
+  setPill($("adv-pill"), r.status, r.ok ? "ok" : "err");
+};
+
+refresh();
 </script>
 </body>
 </html>

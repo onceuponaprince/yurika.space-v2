@@ -171,6 +171,47 @@ class TestVaultDomain:
 
 
 @pytest.mark.django_db
+class TestDevForceVault:
+    """The DEBUG-only shortcut used by the dev panel to skip DNS verify.
+
+    Note: pytest-django defaults settings.DEBUG to False to mirror prod,
+    so the happy-path tests have to explicitly opt into DEBUG=True via
+    pytest-django's `settings` fixture.
+    """
+
+    def test_force_vaults_any_pending_domain(
+        self, user_a: User, domain: Domain, settings
+    ) -> None:
+        settings.DEBUG = True
+        resp = _client_for(user_a).post(
+            reverse("domain-dev-force-vault", args=[domain.id])
+        )
+        assert resp.status_code == 200, resp.json()
+        assert resp.json()["status"] == DomainStatus.VAULTED
+        domain.refresh_from_db()
+        assert domain.vault_contract_address.startswith("0x")
+        assert domain.shard_contract_address.startswith("0x")
+
+    def test_other_user_cannot_force_vault(
+        self, user_a: User, user_b: User, domain: Domain, settings
+    ) -> None:
+        settings.DEBUG = True
+        resp = _client_for(user_b).post(
+            reverse("domain-dev-force-vault", args=[domain.id])
+        )
+        assert resp.status_code == 404
+
+    def test_404s_in_production(
+        self, user_a: User, domain: Domain, settings
+    ) -> None:
+        settings.DEBUG = False
+        resp = _client_for(user_a).post(
+            reverse("domain-dev-force-vault", args=[domain.id])
+        )
+        assert resp.status_code == 404
+
+
+@pytest.mark.django_db
 class TestS3VerifyGate:
     """The README's stated subsystem 3 verify gate:
     'Full domain lifecycle PENDING -> VAULTED'.

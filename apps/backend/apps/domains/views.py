@@ -139,6 +139,29 @@ def vault_domain(request: Request, pk) -> Response:
     return Response(DomainSerializer(domain).data, status=status.HTTP_200_OK)
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsOwner])
+def dev_force_vault(request: Request, pk) -> Response:
+    """DEV-ONLY: skip DNS verification and jump a domain straight to VAULTED.
+
+    Exists so the dev panel can exercise the full PENDING -> ... -> COMPLETED
+    pipeline without needing to publish real DNS TXT records. 404s when
+    DEBUG=False so this can never run in production.
+    """
+    from django.conf import settings as _settings
+    from django.http import Http404
+
+    if not _settings.DEBUG:
+        raise Http404()
+
+    domain = generics.get_object_or_404(Domain, pk=pk, owner=request.user)
+    domain.status = DomainStatus.VAULTED
+    domain.vault_contract_address = _mock_address()
+    domain.shard_contract_address = _mock_address()
+    domain.save()
+    return Response(DomainSerializer(domain).data, status=status.HTTP_200_OK)
+
+
 class ProjectListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ProjectSerializer
