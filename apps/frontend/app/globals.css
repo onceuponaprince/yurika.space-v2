@@ -1,12 +1,292 @@
 @import "tailwindcss";
 
+/* ── Yurika Terminal Design System (Neon Ledger) ──────────────────── */
 :root {
-  color-scheme: dark;
+  /* Color Tokens */
+  --color-bg-primary: #0d0d0d;       /* The Void — deep obsidian */
+  --color-bg-secondary: #141414;     /* Terminal surface */
+  --color-bg-tertiary: #1a1a1a;      /* Elevated surface */
+
+  --color-interactive-primary: #ccff00;    /* Yurika Lime — CTAs, success */
+  --color-interactive-secondary: #9d00ff;  /* Data Purple — shards, metrics */
+  --color-interactive-hover: #b8e600;      /* Lime hover */
+
+  --color-text-primary: #e0e0e0;     /* Terminal White */
+  --color-text-secondary: #888888;   /* Muted readouts */
+  --color-text-tertiary: #555555;    /* Comment/header text */
+  --color-text-accent: #ccff00;      /* Lime highlights */
+
+  --color-feedback-success: #ccff00;
+  --color-feedback-warning: #ffaa00;
+  --color-feedback-error: #ff3131;   /* Glitch Red */
+
+  --color-border: #2a2a2a;
+  --color-border-accent: #ccff0033;
+
+  --radius: 0px;                     /* No rounded corners — terminal sharp */
 }
 
-html,
-body {
-  background: #000;
-  color: #4ade80;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+/* ── Base Reset ──────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  border-radius: 0 !important; /* Enforce terminal constraint globally */
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body), sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ── CRT Scanline Overlay ────────────────────────────────────────── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+}
+
+/* ── Typography ──────────────────────────────────────────────────── */
+.font-display,
+.font-heading {
+  font-family: var(--font-display), monospace;
+  letter-spacing: 0.05em;
+  line-height: 1.6;
+}
+
+.font-mono,
+code,
+pre {
+  font-family: var(--font-mono), monospace;
+}
+
+/* ── Neon Glow Effects ───────────────────────────────────────────── */
+.glow-lime {
+  text-shadow: 0 0 8px #ccff00, 0 0 20px #ccff0066;
+}
+
+.glow-purple {
+  text-shadow: 0 0 8px #9d00ff, 0 0 20px #9d00ff66;
+}
+
+.glow-red {
+  text-shadow: 0 0 8px #ff3131, 0 0 20px #ff313166;
+}
+
+.box-glow-lime {
+  box-shadow: 0 0 8px #ccff00, 0 0 20px #ccff0066;
+}
+
+.box-glow-purple {
+  box-shadow: 0 0 8px #9d00ff, 0 0 20px #9d00ff66;
+}
+
+/* ── Terminal Window Component ───────────────────────────────────── */
+.terminal-window {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  position: relative;
+}
+
+.terminal-window::before {
+  content: "█ █ █";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 12px;
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  letter-spacing: 4px;
+}
+
+.terminal-body {
+  padding-top: 2rem;
+}
+
+/* ── Dithered Pattern ────────────────────────────────────────────── */
+.dither-lime {
+  background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='2' height='2' fill='%23ccff00' opacity='0.15'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%23ccff00' opacity='0.15'/%3E%3C/svg%3E");
+}
+
+.dither-purple {
+  background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='2' height='2' fill='%239d00ff' opacity='0.15'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%239d00ff' opacity='0.15'/%3E%3C/svg%3E");
+}
+
+/* ── CTA Button Base ─────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--color-interactive-primary);
+  color: #0d0d0d;
+  font-family: var(--font-mono), monospace;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--color-interactive-primary);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.1s;
+}
+
+.btn-primary:hover {
+  background: var(--color-interactive-hover);
+  box-shadow: 0 0 12px #ccff00, 0 0 30px #ccff0044;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-interactive-primary);
+  color: var(--color-interactive-primary);
+}
+
+.btn-destructive {
+  background: transparent;
+  color: var(--color-feedback-error);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--color-feedback-error);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-destructive:hover {
+  background: var(--color-feedback-error);
+  color: #0d0d0d;
+  box-shadow: 0 0 12px #ff3131, 0 0 30px #ff313144;
+}
+
+/* ── Blinking cursor ─────────────────────────────────────────────── */
+.cursor::after {
+  content: "▮";
+  animation: blink 1s step-end infinite;
+  color: var(--color-interactive-primary);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Glitch animation ────────────────────────────────────────────── */
+@keyframes glitch {
+  0% { transform: translateX(0); clip-path: none; }
+  20% { transform: translateX(-2px); clip-path: polygon(0 15%, 100% 15%, 100% 30%, 0 30%); }
+  40% { transform: translateX(2px); clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%); }
+  60% { transform: translateX(-1px); clip-path: none; }
+  80% { transform: translateX(1px); clip-path: polygon(0 40%, 100% 40%, 100% 50%, 0 50%); }
+  100% { transform: translateX(0); clip-path: none; }
+}
+
+.glitch-hover:hover {
+  animation: glitch 0.3s steps(2) 1;
+}
+
+/* ── Form Inputs ─────────────────────────────────────────────────── */
+.terminal-input {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.terminal-input:focus {
+  border-color: var(--color-interactive-primary);
+  box-shadow: 0 0 0 1px var(--color-interactive-primary), 0 0 12px #ccff0044;
+}
+
+.terminal-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-interactive-primary);
+}
+
+/* ── Selection ───────────────────────────────────────────────────── */
+::selection {
+  background: var(--color-interactive-primary);
+  color: #0d0d0d;
+}
+
+/* ── Status pills (for domain/campaign state badges) ─────────────── */
+.status-pill {
+  display: inline-block;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.status-pill[data-status="pending"]  { border-color: var(--color-feedback-warning); color: var(--color-feedback-warning); }
+.status-pill[data-status="verified"] { border-color: var(--color-text-primary);     color: var(--color-text-primary); }
+.status-pill[data-status="vaulted"]  { border-color: var(--color-interactive-secondary); color: var(--color-interactive-secondary); }
+.status-pill[data-status="sharding"] { border-color: var(--color-interactive-secondary); color: var(--color-interactive-secondary); }
+.status-pill[data-status="active"]   { border-color: var(--color-interactive-primary); color: var(--color-interactive-primary); }
+.status-pill[data-status="completed"]{ border-color: var(--color-feedback-success); color: var(--color-feedback-success); background: var(--color-border-accent); }
+.status-pill[data-status="withdrawn"]{ border-color: var(--color-feedback-error); color: var(--color-feedback-error); }

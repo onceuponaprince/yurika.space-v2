@@ -14,9 +14,104 @@ subsystem's verify gate.
 
 ### Pending
 
-- Subsystem 6 — Frontend pages (App Router + wallet UX)
 - Subsystem 7 — Smart contracts (Foundry → Base Sepolia)
 - Subsystem 8 — Celery + email + observability
+
+## [0.6.0] — 2026-05-28 — Subsystem 6: Frontend (Neon Ledger UI)
+
+### Added
+
+- Frontend now ships the **Neon Ledger** terminal design system, ported
+  from `~/code/yurika.space`. Yurika Lime (`#ccff00`) on The Void
+  (`#0d0d0d`), Data Purple (`#9d00ff`) for shards/metrics, CRT scanline
+  overlay, dithered patterns, blinking cursor, and the global
+  `border-radius: 0` constraint (terminal aesthetic — sharp corners
+  everywhere).
+- Three typefaces wired via `next/font/google`: **Press Start 2P**
+  (display), **JetBrains Mono** (data), **Inter** (body). Exposed as
+  CSS variables `--font-display`, `--font-mono`, `--font-body`.
+- Reusable CSS primitives: `.terminal-window` (the framed box with
+  the `█ █ █` header), `.btn-primary` / `.btn-ghost` /
+  `.btn-destructive`, `.terminal-input`, `.status-pill` (auto-colours
+  by `data-status`), `.glow-lime` / `.glow-purple` / `.glow-red`.
+- Lib layer:
+  - `lib/api.ts` — typed `ApiClient` with `setToken()`, automatic
+    Bearer header, asymmetric base URLs (browser hits
+    `localhost:8000/api`, SSR hits `django:8000/api` over the docker
+    network).
+  - `lib/types.ts` — TS shapes matching every backend serializer.
+  - `lib/auth-store.ts` — Zustand persist for JWT pair + user, with
+    `hydrateApi()` that re-attaches the token to the api singleton
+    after rehydration from localStorage.
+  - `lib/siwe.ts` — full SIWE round-trip (`fetchSiweMessage`,
+    `verifySiwe`, `signIn`). The backend is the source of truth for
+    the nonce + canonical message; the client just signs what it
+    receives. (The original frontend's client-minted nonce was a
+    subtle bug — fixed here.)
+  - `lib/dev-account.ts` — browser-side ephemeral keypair via viem
+    (mirrors the dev panel approach). MetaMask / WalletConnect lands
+    in a later patch.
+- Pages:
+  - `/` — landing with terminal hero, three feature cards (VAULT /
+    SHARD / DISCOVER), stack overview.
+  - `/login` — wallet connect + SIWE sign-in panel. Mints (or
+    reuses) an ephemeral keypair, runs the full nonce → sign →
+    verify → JWT cycle, hydrates the auth store, redirects to
+    `/app`.
+  - `/app` — Command Center. Auth-gated via `app/app/layout.tsx`
+    (redirects to `/login` if no JWT after rehydration). Shows
+    graph stats + launch task queue.
+  - `/app/domains` — founder domain ledger: submit, view TXT-record
+    instructions, verify DNS, force-vault (DEBUG-only shortcut),
+    vault transition.
+  - `/app/marketplace` — campaign creator (for vaulted domains) +
+    marketplace browser + activate/buy + holdings ledger.
+  - `/app/discover` — graph discovery feed with personalized /
+    trending toggle.
+- Reusable React components: `<Providers>` (React Query +
+  auth-store hydration), `<Nav>` (active-route highlight + sign-out),
+  `<TerminalWindow>`, `<Button>`, `<SignInPanel>`.
+- `scripts/smoke.mjs` — end-to-end pipeline test that drives the
+  same primitives (viem + fetch) the browser uses, against the live
+  backend. Walks the entire user journey from ephemeral wallet →
+  SIWE → JWT → domain → vault → campaign → activate → discovery in
+  one pass. Useful as a regression gate before frontend releases.
+
+### Changed
+
+- Removed the placeholder home page that just rendered the backend
+  health check JSON. Landing now shows the proper Yurika branding.
+- `docker-compose.yml`: `INTERNAL_API_BASE_URL` now includes the
+  `/api` suffix to mirror `NEXT_PUBLIC_API_BASE_URL`. The base URLs
+  are now symmetric on both sides of the docker network.
+- `tsconfig.json` auto-formatted by Next.js on first compile (added
+  `jsx: "react-jsx"`, normalized array indentation). Harmless.
+- New runtime deps: `viem 2.21.45`, `wagmi 2.13.5`, `zustand 5.0.2`,
+  `@tanstack/react-query 5.62.0`. No third-party wallet provider
+  yet (Dynamic.xyz deferred to a later patch).
+
+### Scope notes
+
+This subsystem deliberately scopes down from the original
+`~/code/yurika.space` reference implementation:
+
+- **In**: Neon Ledger design tokens, full lib layer, all 6
+  user-facing pages, end-to-end pipeline working in browser.
+- **Out (v0.6.x patches)**: Three.js marketing hero, Dynamic.xyz
+  wallet provider, Radix UI overlays, Framer Motion animations,
+  Supabase waitlist. None of these are blockers for the verify
+  gate; they're polish that lands when there's a story for the
+  memory budget and bundle size.
+
+### Verify gate
+
+`apps/frontend/scripts/smoke.mjs` walks the complete pipeline end-
+to-end in under 3 seconds against the live docker compose stack.
+All 6 frontend routes (`/`, `/login`, `/app`, `/app/domains`,
+`/app/marketplace`, `/app/discover`) render with the design system
+applied. The user can sign in with a fresh wallet, vault a domain,
+create + activate a campaign, and see live graph statistics —
+entirely through the UI, no curl required.
 
 ## [0.5.0] — 2026-05-27 — Subsystem 5: Knowledge Graph
 
@@ -296,7 +391,8 @@ Live curl smoke against the container confirms `/api/domains/` and
 `{"status": "ok", "checks": {"postgres": "ok", "redis": "ok"}}`;
 `curl http://localhost:3001/` returns 200.
 
-[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.6.0
 [0.5.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.5.0
 [0.4.2]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.2
 [0.4.1]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.1

@@ -188,8 +188,9 @@ services:
       NODE_OPTIONS: --max-old-space-size=768
       # Browser-side requests (rendered HTML hits the user's machine, not the container network)
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api}
-      # Server-side fetches from inside the container go over the docker network
-      INTERNAL_API_BASE_URL: http://django:8000
+      # Server-side fetches from inside the container go over the docker network.
+      # Note the /api suffix so the server-side and browser-side URLs are symmetric.
+      INTERNAL_API_BASE_URL: http://django:8000/api
     ports:
       - "3001:3000"
     volumes:
