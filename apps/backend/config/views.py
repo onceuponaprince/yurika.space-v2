@@ -42,6 +42,7 @@ def health(request) -> JsonResponse:
 
 
 _PANEL_HTML_PATH = Path(__file__).resolve().parent / "dev_panel.html"
+_API_CATALOG_PATH = Path(__file__).resolve().parent / "api_catalog.json"
 
 
 @require_GET
@@ -49,3 +50,19 @@ def dev_panel(request) -> HttpResponse:
     if not settings.DEBUG:
         raise Http404()
     return HttpResponse(_PANEL_HTML_PATH.read_text(encoding="utf-8"), content_type="text/html; charset=utf-8")
+
+
+@require_GET
+def api_catalog(request) -> HttpResponse:
+    """Single source of truth for the endpoint test catalog, consumed by
+    both the dev panel and the Next.js frontend's test view. DEBUG-gated
+    like the panel — it's a development surface, not a production API."""
+    if not settings.DEBUG:
+        raise Http404()
+    # CORS open so the frontend (different origin in dev) can fetch it.
+    response = HttpResponse(
+        _API_CATALOG_PATH.read_text(encoding="utf-8"),
+        content_type="application/json; charset=utf-8",
+    )
+    response["Access-Control-Allow-Origin"] = "*"
+    return response

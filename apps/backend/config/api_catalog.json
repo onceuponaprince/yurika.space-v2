@@ -1,0 +1,338 @@
+{
+  "_meta": {
+    "version": "0.7.0",
+    "title": "yurika.space backend — API test catalog",
+    "description": "Single source of truth for the dev panel and the Next.js frontend test view. Pure data, no logic. Field semantics below.",
+    "fields": {
+      "id": "stable key, dot-namespaced by group",
+      "group": "display grouping",
+      "method": "HTTP verb",
+      "path": "path template; {param} segments are filled from captures via pathParams",
+      "auth": "public | jwt | owner — owner endpoints also need jwt",
+      "query": "object of querystring params; {placeholder} values are filled at runtime",
+      "body": "sample JSON body; {placeholder} values are filled from captures",
+      "pathParams": "capture keys that fill {param} segments in path",
+      "requires": "capture keys that must exist before this call can run (drives gating/sequencing)",
+      "captures": "map of captureKey -> JSON path in the response to stash for later calls",
+      "expectStatus": "happy-path status code the panel asserts green against",
+      "note": "human hint"
+    },
+    "authChain": ["auth.nonce", "auth.verify"],
+    "runtimePlaceholders": {
+      "wallet": "ephemeral EVM address (panel generates a keypair)",
+      "message": "captured from auth.nonce response",
+      "signature": "panel signs {message} with the ephemeral key"
+    }
+  },
+  "endpoints": [
+    {
+      "id": "infra.health",
+      "group": "Infra",
+      "method": "GET",
+      "path": "/health/",
+      "auth": "public",
+      "expectStatus": 200,
+      "note": "Postgres + Redis probe. Lives outside /api/. Returns {status, checks}."
+    },
+
+    {
+      "id": "auth.nonce",
+      "group": "Auth",
+      "method": "GET",
+      "path": "/api/auth/wallet/nonce/",
+      "auth": "public",
+      "query": { "address": "{wallet}" },
+      "captures": { "message": "message" },
+      "expectStatus": 200,
+      "note": "Mint a SIWE nonce + canonical message for {wallet}. Step 1 of login."
+    },
+    {
+      "id": "auth.verify",
+      "group": "Auth",
+      "method": "POST",
+      "path": "/api/auth/wallet/verify/",
+      "auth": "public",
+      "body": { "message": "{message}", "signature": "{signature}" },
+      "requires": ["message", "signature"],
+      "captures": { "jwt": "access", "refresh": "refresh" },
+      "expectStatus": 200,
+      "note": "Verify the signature, issue JWT. Capturing jwt unlocks every authed call."
+    },
+    {
+      "id": "auth.whoami",
+      "group": "Auth",
+      "method": "GET",
+      "path": "/api/auth/whoami/",
+      "auth": "jwt",
+      "requires": ["jwt"],
+      "expectStatus": 200,
+      "note": "Echo the authenticated user. Cheapest check that the JWT is live."
+    },
+
+    {
+      "id": "domains.list",
+      "group": "Domains",
+      "method": "GET",
+      "path": "/api/domains/",
+      "auth": "jwt",
+      "requires": ["jwt"],
+      "expectStatus": 200,
+      "note": "List the caller's own domains."
+    },
+    {
+      "id": "domains.create",
+      "group": "Domains",
+      "method": "POST",
+      "path": "/api/domains/",
+      "auth": "jwt",
+      "requires": ["jwt"],
+      "body": { "name": "yurika-test", "tld": "xyz", "description": "panel-created test domain" },
+      "captures": { "domainId": "id" },
+      "expectStatus": 201,
+      "note": "fqdn/status/contract-addresses are read-only (server-derived)."
+    },
+    {
+      "id": "domains.detail",
+      "group": "Domains",
+      "method": "GET",
+      "path": "/api/domains/{domainId}/",
+      "auth": "owner",
+      "pathParams": ["domainId"],
+      "requires": ["jwt", "domainId"],
+      "expectStatus": 200
+    },
+    {
+      "id": "domains.update",
+      "group": "Domains",
+      "method": "PATCH",
+      "path": "/api/domains/{domainId}/",
+      "auth": "owner",
+      "pathParams": ["domainId"],
+      "requires": ["jwt", "domainId"],
+      "body": { "description": "edited via panel" },
+      "expectStatus": 200
+    },
+    {
+      "id": "domains.verifyInstructions",
+      "group": "Domains",
+      "method": "GET",
+      "path": "/api/domains/{domainId}/verify-instructions/",
+      "auth": "owner",
+      "pathParams": ["domainId"],
+      "requires": ["jwt", "domainId"],
+      "expectStatus": 200,
+      "note": "Returns the TXT record (name + value) the founder must publish."
+    },
+    {
+      "id": "domains.verify",
+      "group": "Domains",
+      "method": "POST",
+      "path": "/api/domains/{domainId}/verify/",
+      "auth": "owner",
+      "pathParams": ["domainId"],
+      "requires": ["jwt", "domainId"],
+      "expectStatus": 200,
+      "note": "Real DNS check — expect 400 in the sandbox (no published TXT). Use dev-force-vault to skip."
+    },
+    {
+      "id": "domains.vault",
+      "group": "Domains",
+      "method": "POST",
+      "path": "/api/domains/{domainId}/vault/",
+      "auth": "owner",
+      "pathParams": ["domainId"],
+      "requires": ["jwt", "domainId"],
+      "expectStatus": 200,
+      "note": "Production vault path — requires VERIFIED status first."
+    },
+    {
+      "id": "domains.devForceVault",
+      "group": "Domains",
+      "method": "POST",
+      "path": "/api/domains/{domainId}/dev-force-vault/",
+      "auth": "owner",
+      "pathParams": ["domainId"],
+      "requires": ["jwt", "domainId"],
+      "expectStatus": 200,
+      "note": "DEBUG-only shortcut: jump straight to VAULTED. The campaign flow depends on this."
+    },
+    {
+      "id": "domains.delete",
+      "group": "Domains",
+      "method": "DELETE",
+      "path": "/api/domains/{domainId}/",
+      "auth": "owner",
+      "pathParams": ["domainId"],
+      "requires": ["jwt", "domainId"],
+      "expectStatus": 204,
+      "destructive": true,
+      "note": "Run last — deletes the domain the rest of the chain depends on."
+    },
+
+    {
+      "id": "projects.list",
+      "group": "Projects",
+      "method": "GET",
+      "path": "/api/projects/",
+      "auth": "jwt",
+      "requires": ["jwt"],
+      "expectStatus": 200
+    },
+    {
+      "id": "projects.create",
+      "group": "Projects",
+      "method": "POST",
+      "path": "/api/projects/",
+      "auth": "jwt",
+      "requires": ["jwt"],
+      "body": { "name": "Panel Test Project", "description": "created from the API test panel", "repository_url": "https://github.com/yurika/test" },
+      "captures": { "projectId": "id" },
+      "expectStatus": 201
+    },
+    {
+      "id": "projects.detail",
+      "group": "Projects",
+      "method": "GET",
+      "path": "/api/projects/{projectId}/",
+      "auth": "owner",
+      "pathParams": ["projectId"],
+      "requires": ["jwt", "projectId"],
+      "expectStatus": 200
+    },
+    {
+      "id": "projects.update",
+      "group": "Projects",
+      "method": "PATCH",
+      "path": "/api/projects/{projectId}/",
+      "auth": "owner",
+      "pathParams": ["projectId"],
+      "requires": ["jwt", "projectId"],
+      "body": { "description": "edited via panel" },
+      "expectStatus": 200
+    },
+    {
+      "id": "projects.delete",
+      "group": "Projects",
+      "method": "DELETE",
+      "path": "/api/projects/{projectId}/",
+      "auth": "owner",
+      "pathParams": ["projectId"],
+      "requires": ["jwt", "projectId"],
+      "expectStatus": 204,
+      "destructive": true
+    },
+
+    {
+      "id": "campaigns.list",
+      "group": "Marketplace",
+      "method": "GET",
+      "path": "/api/campaigns/",
+      "auth": "public",
+      "query": { "status": "" },
+      "expectStatus": 200,
+      "note": "Public marketplace listing. Optional ?status= filters by domain lifecycle."
+    },
+    {
+      "id": "campaigns.create",
+      "group": "Marketplace",
+      "method": "POST",
+      "path": "/api/campaigns/",
+      "auth": "jwt",
+      "requires": ["jwt", "domainId"],
+      "body": {
+        "domain": "{domainId}",
+        "title": "Test Campaign",
+        "thesis": "Panel-created campaign for end-to-end testing.",
+        "total_shards": 1000000,
+        "price_per_shard_usd": "0.10",
+        "funding_target_usd": "50000.00"
+      },
+      "captures": { "campaignId": "id" },
+      "expectStatus": 201,
+      "note": "Domain must be VAULTED. funding_target_usd <= total_shards * price_per_shard_usd."
+    },
+    {
+      "id": "campaigns.detail",
+      "group": "Marketplace",
+      "method": "GET",
+      "path": "/api/campaigns/{campaignId}/",
+      "auth": "public",
+      "pathParams": ["campaignId"],
+      "requires": ["campaignId"],
+      "expectStatus": 200
+    },
+    {
+      "id": "campaigns.update",
+      "group": "Marketplace",
+      "method": "PATCH",
+      "path": "/api/campaigns/{campaignId}/",
+      "auth": "owner",
+      "pathParams": ["campaignId"],
+      "requires": ["jwt", "campaignId"],
+      "body": { "thesis": "edited via panel — only allowed while SHARDING" },
+      "expectStatus": 200,
+      "note": "409 once the campaign leaves SHARDING."
+    },
+    {
+      "id": "campaigns.activate",
+      "group": "Marketplace",
+      "method": "POST",
+      "path": "/api/campaigns/{campaignId}/activate/",
+      "auth": "owner",
+      "pathParams": ["campaignId"],
+      "requires": ["jwt", "campaignId"],
+      "expectStatus": 200,
+      "note": "SHARDING -> ACTIVE. Must run before buy."
+    },
+    {
+      "id": "campaigns.buy",
+      "group": "Marketplace",
+      "method": "POST",
+      "path": "/api/campaigns/{campaignId}/buy/",
+      "auth": "jwt",
+      "pathParams": ["campaignId"],
+      "requires": ["jwt", "campaignId"],
+      "body": { "shards": 100 },
+      "expectStatus": 200,
+      "note": "Campaign must be ACTIVE. Row-locked; auto-COMPLETEs when funding target hit."
+    },
+    {
+      "id": "marketplace.holdings",
+      "group": "Marketplace",
+      "method": "GET",
+      "path": "/api/holdings/",
+      "auth": "jwt",
+      "requires": ["jwt"],
+      "expectStatus": 200,
+      "note": "The caller's holdings across all campaigns."
+    },
+
+    {
+      "id": "graph.discover",
+      "group": "Graph",
+      "method": "GET",
+      "path": "/api/graph/discover/",
+      "auth": "public",
+      "expectStatus": 200,
+      "note": "Neo4j-backed discovery. Returns nodes + edges."
+    }
+  ],
+
+  "negativePathTests": [
+    {
+      "_comment": "DECISION/CONTRIBUTION SPOT — add the failure-mode tests that matter to you. The happy path above proves the endpoints work; these prove they fail *correctly*. A few high-value candidates are pre-filled as a pattern; extend with the assertions you care about.",
+      "id": "auth.verify.badSignature",
+      "basedOn": "auth.verify",
+      "mutate": { "body": { "signature": "0xdeadbeef" } },
+      "expectStatus": 400,
+      "note": "Tampered signature must be rejected — core SIWE security property."
+    },
+    {
+      "id": "campaigns.buy.oversell",
+      "basedOn": "campaigns.buy",
+      "mutate": { "body": { "shards": 999999999 } },
+      "expectStatus": 409,
+      "note": "Requesting more than shards_available must 409, not oversell."
+    }
+  ]
+}
