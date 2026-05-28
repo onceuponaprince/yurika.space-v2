@@ -14,8 +14,98 @@ subsystem's verify gate.
 
 ### Pending
 
-- Subsystem 7 — Smart contracts (Foundry → Base Sepolia)
-- Subsystem 8 — Celery + email + observability
+- Subsystem 7.1 — Solana contracts (Anchor + Rust)
+- Subsystem 8   — Celery + email + observability
+
+## [0.7.0] — 2026-05-28 — Subsystem 7: EVM contracts (Foundry)
+
+### Added
+
+- `contracts/` is now a Foundry workspace (was a placeholder). solc
+  0.8.24, optimizer + `via_ir = true` (required because
+  `ShardFactory.deploy()` passes 10 constructor args to ShardToken,
+  busting the EVM stack without IR-based codegen). `forge-std` is
+  the only library dependency — no OpenZeppelin imports, minimal
+  surface area.
+- **`YurikaVault.sol`** — domain-credential custody. Per-domain
+  records keyed by `bytes32 domainId` (`keccak256(fqdn)`). Founder
+  vaults their domain with an IPFS metadata hash; governance-gated
+  pause and shard-contract linking; founder-only withdraw (un-vault).
+- **`ShardToken.sol`** — ERC-20 fractional-ownership token bundled
+  with a sale campaign. **Payment-token-agnostic**: pass `address(0)`
+  for native ETH, or any ERC-20 address (USDC etc.) for token-priced
+  campaigns. Funding-target auto-close; ETH-path overpayments queued
+  for pull-based refund; receive() guard rejects raw ETH on the
+  ERC-20 path.
+- **`ShardFactory.sol`** — deploys one ShardToken per vaulted domain.
+  Only callable by the domain's vaulted owner. The factory is the
+  vault's `governance` (set at vault construction via CREATE-nonce
+  prediction in `Deploy.s.sol`), so it's the only address that can
+  link shard contracts back to vault entries.
+- **`MockUSDC.sol`** — 6-decimal mock ERC-20 for tests + testnet
+  deploys. Mintable by anyone; only suitable as a test counterparty.
+- **`YurikaGovernor.sol`** — minimal on-chain governance bound to
+  a single ShardToken. propose → cast votes during voting period →
+  execute if quorum (basis points of totalSupply) + majority.
+  Voting weight = `ShardToken.balanceOf` at vote time. Arbitrary
+  call dispatch via `(bool ok,) = p.target.call(p.callData)`.
+- **`IERC20.sol`** — minimal interface; avoids pulling in the full
+  OpenZeppelin contracts package.
+- **`script/Deploy.s.sol`** — single-run deploy script. Predicts
+  the factory's CREATE address, deploys vault with that as
+  governance, then deploys factory + MockUSDC. Verifies the
+  prediction held.
+- **`deploy-base-sepolia.sh`** — wraps `forge script` with
+  Basescan verification (when API key set). Reads `.env`.
+- **`.env.example`** — documents required env vars
+  (`BASE_SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, `BASESCAN_API_KEY`)
+  with faucet link.
+- 51 pytest-style Foundry tests across 4 suites:
+  - `YurikaVault.t.sol`         (16 cases) — constructor, vault,
+    withdraw, link, pause, access control
+  - `ShardToken.t.sol`          (15 cases) — ETH + USDC payment paths,
+    funding-target close, ERC-20 transfers, withdrawals
+  - `ShardFactory.t.sol`        ( 5 cases) — happy-path deploy,
+    owner-only gate, vault-inactive gate, double-deploy gate,
+    deployed-count tracking
+  - `YurikaGovernor.t.sol`      (15 cases) — propose threshold,
+    vote accumulation, quorum + majority, real arbitrary-call
+    execution via the governor
+
+### Changed
+
+- `contracts/README.md` rewritten from "placeholder" to a full guide
+  covering contracts, quick-start, anvil + Base Sepolia deploys,
+  architecture rationale, and documented v0.7.0 limitations.
+
+### Scope notes
+
+This subsystem deliberately scopes down + adds three originally
+requested extensions:
+
+- **In**: Vault, ShardToken (payment-agnostic), ShardFactory,
+  MockUSDC, YurikaGovernor — 5 contracts + 51 tests. Anvil deploy
+  verified locally. Base Sepolia deploy is one-command via
+  `./deploy-base-sepolia.sh` (requires funded testnet wallet +
+  Basescan key).
+- **Out** (later patches):
+  - `TaxManager` (platform/referral/participation fee routing) —
+    deferred until the off-chain accounting model is settled.
+  - Snapshot-based voting (ERC-20Votes pattern) — current governor
+    is exploitable via wallet-split-and-vote-twice.
+  - Shard-holder-supermajority gate on `YurikaVault.withdraw()` —
+    founder-only for v0.7.0.
+  - Backend integration: replace the mock `vault_contract_address`
+    with real on-chain reads. Lands when the backend gets a Celery
+    worker (S8) or web3 read path.
+
+### Verify gate
+
+`forge test` → **51 passed, 0 failed**.
+`forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545
+--broadcast` against local anvil deploys all three contracts;
+broadcast receipts at `broadcast/Deploy.s.sol/31337/run-latest.json`
+show contract addresses + tx hashes.
 
 ## [0.6.0] — 2026-05-28 — Subsystem 6: Frontend (Neon Ledger UI)
 
@@ -391,7 +481,8 @@ Live curl smoke against the container confirms `/api/domains/` and
 `{"status": "ok", "checks": {"postgres": "ok", "redis": "ok"}}`;
 `curl http://localhost:3001/` returns 200.
 
-[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/onceuponaprince/yurika.space/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.7.0
 [0.6.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.6.0
 [0.5.0]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.5.0
 [0.4.2]: https://github.com/onceuponaprince/yurika.space/releases/tag/v0.4.2

@@ -1,0 +1,32 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+optimizer = true
+optimizer_runs = 200
+solc_version = "0.8.24"
+auto_detect_solc = false
+# Required: ShardFactory.deploy() passes 10 ctor args to ShardToken,
+# which busts the EVM stack without viaIR. Cost: slower compile,
+# better optimized bytecode.
+via_ir = true
+remappings = ["forge-std/=lib/forge-std/src/"]
+
+# Forbid unchecked external calls; emit clear errors not bare reverts.
+deny_warnings = false
+
+[profile.default.fuzz]
+runs = 256
+
+[rpc_endpoints]
+# Used by `forge script --rpc-url <key>` and `cast --rpc-url <key>`.
+base_mainnet = "${BASE_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+localhost    = "http://127.0.0.1:8545"
+
+[etherscan]
+# Required for `forge verify-contract` after a real deploy.
+base         = { key = "${BASESCAN_API_KEY}", url = "https://api.basescan.org/api" }
+base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api" }

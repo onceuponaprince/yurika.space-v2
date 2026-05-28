@@ -1,0 +1,16 @@
+# Forge build artifacts (deterministic, regenerated from sources)
+out/
+cache/
+
+# Broadcast directory holds deploy transaction receipts.
+# Keep "dry-run" subfolders out, but commit the receipt of actual
+# deploys to mainnet/testnet so addresses + tx hashes are tracked.
+broadcast/*/*/dry-run/
+broadcast/anvil_*/
+
+# Deployer key + RPC env file
+.env
+.env.local
+
+# Generated coverage report
+lcov.info

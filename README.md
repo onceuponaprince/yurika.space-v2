@@ -64,8 +64,8 @@ To inspect actual usage: `docker stats`.
 | 4 | Shards / Marketplace (campaigns + invest) | done | Curator can buy shards |
 | 5 | Knowledge Graph (Neo4j sync + discovery) | done | `/api/graph/discover/` returns nodes |
 | 6 | Frontend pages (App Router + wallet UX) | done | End-to-end flow in browser |
-| 7 | Smart contracts (Foundry → Base Sepolia) | pending | `forge test` passes, vault deploy works |
+| 7 | Smart contracts (Foundry → Base Sepolia) | done | `forge test` passes, vault deploy works |
 | 8 | Celery + email + observability | pending | Background jobs run, Sentry receives events |
 
 See [CHANGELOG.md](./CHANGELOG.md) for per-subsystem release notes.
-Current version: **v0.6.0** (yurika.space-v2).
+Current version: **v0.7.0** (yurika.space-v2).
