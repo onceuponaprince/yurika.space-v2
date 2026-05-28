@@ -68,4 +68,5 @@ To inspect actual usage: `docker stats`.
 | 8 | Celery + email + observability | pending | Background jobs run, Sentry receives events |
 
 See [CHANGELOG.md](./CHANGELOG.md) for per-subsystem release notes.
+See [INTEGRATION.md](./INTEGRATION.md) for the on-chain ↔ off-chain wiring plan (the S8 backbone).
 Current version: **v0.7.0** (yurika.space-v2).
